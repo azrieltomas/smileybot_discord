@@ -14,10 +14,10 @@ import math
 from discord.ext import commands
 
 #imgur
-client_id = "aec4adccb968389"
-client_secret = "741f26d732eb750314ec4c1e6065a2a061951fff"
+client_id = ""
+client_secret = ""
 #discord
-DTOKEN = "MzA1MjcxNzI0NjU4Nzg2MzA0.C9yzuw.KHUFIf9W6rUk2FDfOC4hwl8Bd2Q"
+DTOKEN = ".C9yzuw.KHUFIf9W6rUk2FDfOC4hwl8Bd2Q"
 DISCORD_MAX_CHAR = 2000
 
 client = imgurpython.ImgurClient(client_id, client_secret)
@@ -39,8 +39,7 @@ Command Syntax:
 Code available on request.
 '''
 
-adminlist = ('alexis<3#7889', 'crabmatic#2250', 'Everchosen#1117', 'phantasm_agaric#9334',
-             'kitsu#4426', 'Sovvie#7512')
+adminlist = ('')
 
 class Image:
     def __init__(self, bot):
