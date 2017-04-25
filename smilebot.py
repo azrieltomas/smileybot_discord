@@ -1,7 +1,6 @@
 #SmileBot, originally for Euphoria, and created by SillyLyn.
 #Code forked and remade for Discord by crabmatic#2250
 #There's a few things in here that are throwbacks to the old system
-#eg each key needing to start with '!'
 #I might fix them up but probably wont
 import discord
 import imgurpython
@@ -10,30 +9,38 @@ import json
 import time, datetime
 import random
 import urllib.parse, urllib.error, urllib.request
+import math
 
 from discord.ext import commands
 
 #imgur
-client_id = ""
-client_secret = ""
+client_id = "aec4adccb968389"
+client_secret = "741f26d732eb750314ec4c1e6065a2a061951fff"
 #discord
-DTOKEN = ""
+DTOKEN = "MzA1MjcxNzI0NjU4Nzg2MzA0.C9yzuw.KHUFIf9W6rUk2FDfOC4hwl8Bd2Q"
 DISCORD_MAX_CHAR = 2000
 
 client = imgurpython.ImgurClient(client_id, client_secret)
 
-description='''Smilebot, for euphoria, now for Discord!
+description = '''Smilebot, for euphoria, now for Discord!
 Original euphoria bot by Lyn. Discord port by crabmatic#2250.
 Command Syntax:
-    !add <name> <url>
-    !info user <user name>
-    !info image <image name>
-    !listall
-    !top
+    !call <smiley>
+    !add <smiley> <url>
+    !info user <username>
+    !info image <smiley>
+    !listall --- lists all available smileys
+    !top --- lists the top ten smileys
     !random
-    !me_irl
+    !me_irl --- displays your personal smiley
+            --- create with !add <your username> <url>
+    !remove <smiley> --- delete smiley from the database
+    !delete <smiley> --- delete smiley from the database AND imgur
 Code available on request.
 '''
+
+adminlist = ('alexis<3#7889', 'crabmatic#2250', 'Everchosen#1117', 'phantasm_agaric#9334',
+             'kitsu#4426', 'Sovvie#7512')
 
 class Image:
     def __init__(self, bot):
@@ -45,8 +52,7 @@ class Image:
     #returns a smiley
     @commands.command(pass_context=True, no_pm=True)
     async def call(self, ctx, key: str):
-        if not key[0] == '!':
-            key = '!' + key
+        key = key.casefold()
         if key in self.list:
             await self.bot.say(self.list[key].get('url'))
             self.record_data(key)
@@ -62,7 +68,7 @@ class Image:
     @commands.command(pass_context=True, no_pm=True)
     async def me_irl(self, ctx):
         #ctx.message.author > eg crabmatic#2250
-        key = '!' + str(ctx.message.author)
+        key = str(ctx.message.author).casefold()
         if key in self.list:
             await self.bot.say(self.list[key].get('url'))
             self.record_data(key)
@@ -91,11 +97,9 @@ class Image:
         if option == 'image':
             if ' ' in key:
                 return
+            key = key.casefold()
             if key.startswith('"') or key.startswith('<'):
                 key = key[1:-1]
-            if not key[0] == '!':
-                key = '!' + key
-            key = key.casefold()
             if not key in self.list:
                 await self.bot.say('No image named "' + key + '" exists.')
             else:
@@ -119,9 +123,10 @@ class Image:
         for key in self.list:
             message = message + ' ' + key
         #character limits means we gotta do a thing
-        uplimit = len(message) + DISCORD_MAX_CHAR // 2 // DISCORD_MAX_CHAR
+        uplimit = math.ceil((len(message) + DISCORD_MAX_CHAR) / 2 / DISCORD_MAX_CHAR)
         await self.bot.say('List of all Smileys:')
-        for i in range(1,uplimit):
+        print(uplimit)
+        for i in range(1,uplimit+1):
             await self.bot.say(message[(i*DISCORD_MAX_CHAR-DISCORD_MAX_CHAR):(i*DISCORD_MAX_CHAR)])
 
     #lists top smileys
@@ -140,19 +145,19 @@ class Image:
     @commands.command(pass_context=True, no_pm=True)
     async def add(self, ctx, key: str=None, url: str=None):
         #get the format correct
+        if not url:
+            await self.bot.say('''~bad syntax puppies~ https://i.imgur.com/ieajOG4.jpg\nTry !add <name> <url>''')
+            return
         if key.startswith('"') or key.startswith('<'):
             key = key[1:-1]
-        if not key[0] == '!':
-            key = '!' + key
         if not url.startswith('http://') and not url.startswith('https://'):
             url = 'https://' + url
 
+        key = key.casefold()
         #verify some error conditions
         if key in self.list:
-            await self.bot.say('Name already in use. PLease choose a different name')
-        if key in ('!', '!list', '!listall', '!add', '!help', '!kill', '!me_irl', '!meirl',
-                   '!random', '!info', '!top', '!botinfo', '!delete'):
-            await self.bot.say('Name prohibited. Please choose a different name')
+            await self.bot.say('Name already in use. Please choose a different name')
+            return
 
         #if image is from imgur just add away
         if self.imgur_verification(url):
@@ -176,7 +181,27 @@ class Image:
         else:
             await self.bot.say('Possible error in image or url. Please check and retry.')
 
-    #restart and kill commands
+    #remove a smiley
+    @commands.command(pass_context=True, no_pm=True)
+    async def remove(self, ctx, key: str=None):
+        key = key.casefold()
+        if str(ctx.message.author) in adminlist or str(ctx.message.author) == self.list[key].get('user'):
+            if not key:
+                await self.bot.say('Syntax error, try !remove <name>')
+            if not key in self.list:
+                await self.bot.say('Unable to find smiley in list. Please try again')
+            else:
+                if key.startswith('"') or key.startswith('<'):
+                    key = key[1:-1]
+                try:
+                    del self.list[key]
+                except KeyError:
+                    return
+                else:
+                    self.write_list()
+                    await self.bot.say('Smiley "' + key +'" removed.')
+        else:
+            await self.bot.say('Insufficient privileges')
 
     def imgur_verification(self, url):
         if not 'imgur.com' in urllib.parse.urlparse(url).netloc:
