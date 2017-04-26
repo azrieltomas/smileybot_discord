@@ -14,10 +14,10 @@ import math
 from discord.ext import commands
 
 #imgur
-client_id = ""
-client_secret = ""
+client_id = "aec4adccb968389"
+client_secret = "741f26d732eb750314ec4c1e6065a2a061951fff"
 #discord
-DTOKEN = ".C9yzuw.KHUFIf9W6rUk2FDfOC4hwl8Bd2Q"
+DTOKEN = "MzA1MjcxNzI0NjU4Nzg2MzA0.C9yzuw.KHUFIf9W6rUk2FDfOC4hwl8Bd2Q"
 DISCORD_MAX_CHAR = 2000
 
 client = imgurpython.ImgurClient(client_id, client_secret)
@@ -35,11 +35,11 @@ Command Syntax:
     !me_irl --- displays your personal smiley
             --- create with !add <your username> <url>
     !remove <smiley> --- delete smiley from the database
-    !delete <smiley> --- delete smiley from the database AND imgur
 Code available on request.
 '''
 
-adminlist = ('')
+adminlist = ('alexis<3#7889', 'crabmatic#2250', 'Everchosen#1117', 'phantasm_agaric#9334',
+             'kitsu#4426', 'Sovvie#7512')
 
 class Image:
     def __init__(self, bot):
