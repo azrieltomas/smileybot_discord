@@ -13,7 +13,7 @@ Code requires the following to be entered by host:
 ##### Bot commands:
 - !call [smiley] *calls link and displays image using native embed*
 - !add [smiley] [url] *add a new image*
-- !info user {username] *displays info about images added by user*
+- !info user [username] *displays info about images added by user*
 - !info image [smiley] *displays info about an image*
 - !listall *lists all available image*
 - !top *lists the top 10 images*
