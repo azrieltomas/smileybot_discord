@@ -18,27 +18,28 @@ client_id = ""
 client_secret = ""
 #discord
 DTOKEN = ""
-DISCORD_MAX_CHAR = 2000
+DISCORD_MAX_CHAR = 1850
 
 client = imgurpython.ImgurClient(client_id, client_secret)
 
 description = '''Smilebot, for euphoria, now for Discord!
 Original euphoria bot by Lyn. Discord port by crabmatic#2250.
 Command Syntax:
-    !call <smiley>
+    &<smiley> --- calls the image
     !add <smiley> <url>
+    !search <string> -- search through the database for similar / matching
     !info user <username>
     !info image <smiley>
     !listall --- lists all available smileys
     !top --- lists the top ten smileys
-    !random
+    !random -- displays a random smiley
     !me_irl --- displays your personal smiley
-            --- create with !add <your username> <url>
+            --- create with !add me_irl <url>
     !remove <smiley> --- delete smiley from the database
 Code available on request.
 '''
 
-adminlist = ('')
+adminlist = ()
 
 class Image:
     def __init__(self, bot):
@@ -48,14 +49,16 @@ class Image:
         self.open_list()
 
     #returns a smiley
-    @commands.command(pass_context=True, no_pm=True)
-    async def call(self, ctx, key: str):
-        key = key.casefold()
-        if key in self.list:
-            await self.bot.say(self.list[key].get('url'))
-            self.record_data(key)
-        else:
-            await self.bot.say('No smiley called ' + key + ' exists.')
+    async def on_message(self, message):
+        if message.content.startswith('&'):
+            key = str(message.content)[1:].casefold()
+            if key in self.list:
+                await bot.send_message(message.channel, self.list[key].get('url'))
+                self.record_data(key)
+            else:
+                msg = 'No smiley called ' + key + ' exists.'
+                await bot.send_message(message.channel, msg)
+        #    await bot.process_commands(message)
 
     #returns bot info / help
     @commands.command()
@@ -66,7 +69,7 @@ class Image:
     @commands.command(pass_context=True, no_pm=True)
     async def me_irl(self, ctx):
         #ctx.message.author > eg crabmatic#2250
-        key = str(ctx.message.author).casefold()
+        key = str(ctx.message.author).casefold().replace(" ", "_")
         if key in self.list:
             await self.bot.say(self.list[key].get('url'))
             self.record_data(key)
@@ -76,16 +79,12 @@ class Image:
     #returns info on an image or user
     @commands.command(pass_context=True, no_pm=True)
     async def info(self, ctx, option: str=None, key: str=None):
-        if not option:
+        if not option or not key:
             await self.bot.say('''Syntax error, try:
                 !info user <user>
                 !info image <image>
                 ''')
-        elif not key:
-            await self.bot.say('''Syntax error, try:
-                !info user <user>
-                !info image <image>
-                ''')
+            return
 
         if option == 'user':
             count = 0
@@ -95,8 +94,6 @@ class Image:
             await self.bot.say('User ' + key + ' has added ' + str(count) + ' images.')
 
         if option == 'image':
-            if ' ' in key:
-                return
             key = key.casefold()
             if key.startswith('"') or key.startswith('<'):
                 key = key[1:-1]
@@ -121,13 +118,12 @@ class Image:
     async def listall(self):
         message = ''
         for key in self.list:
-            message = message + ' ' + key
+            message = message + ' `' + key + '`'
         #character limits means we gotta do a thing
         uplimit = math.ceil((len(message) + DISCORD_MAX_CHAR) / 2 / DISCORD_MAX_CHAR)
         await self.bot.say('List of all Smileys:')
-        print(uplimit)
         for i in range(1,uplimit+1):
-            await self.bot.say(message[(i*DISCORD_MAX_CHAR-DISCORD_MAX_CHAR):(i*DISCORD_MAX_CHAR)])
+            await self.bot.say ('`' + message[(i*DISCORD_MAX_CHAR-DISCORD_MAX_CHAR):(i*DISCORD_MAX_CHAR)] + '`')
 
     #lists top smileys
     @commands.command()
@@ -136,10 +132,13 @@ class Image:
         for key in self.list:
             top.append((int(self.list[key]['count']), key))
         top.sort()
-        message = 'Top 10 Smileys:'
-        for i in range(1,11):
-            message = message + '\n' + str(i) + '. ' + top[-i][1] + ' (' + str(top[-i][0]) + ')'
-        await self.bot.say(message)
+        if len(top) < 10:
+            await self.bot.say('You need to have added 10 smileys first.')
+        else:
+            message = 'Top 10 Smileys:'
+            for i in range(1,11):
+                message =  message + '\n' + str(i) + '. ' + top[-i][1] + ' (' + str(top[-i][0]) + ')'
+            await self.bot.say('```' + message + '```')
 
     #add a new smiley
     @commands.command(pass_context=True, no_pm=True)
@@ -154,14 +153,19 @@ class Image:
             url = 'https://' + url
 
         key = key.casefold()
+
+        #handle me_irl adds
+        if key == 'me_irl' or key == 'meirl':
+            key = str(ctx.message.author).casefold().replace(" ", "_")
+
         #verify some error conditions
         if key in self.list:
-            await self.bot.say('Name already in use. Please choose a different name')
+            await self.bot.say('Name "' + key + '" already in use. Please choose a different name')
             return
 
         #if image is from imgur just add away
         if self.imgur_verification(url):
-            self.list[key] = {'url': url, 'count': '0', 'user': str(ctx.message.author),
+            self.list[key] = {'url': url, 'count': '0', 'user': str(ctx.message.author).replace(" ", "_"),
                               'date': str(datetime.datetime.utcnow()), 'deletehash': None}
             self.write_list()
             await self.bot.say('New smiley "' + key + '" added.')
@@ -170,7 +174,7 @@ class Image:
             if client.get_credits()['UserRemaining'] >= 10:
                 try:
                     img = client.upload_from_url(url)
-                    self.list[key] = {'url': img['link'], 'count': '0', 'user': str(ctx.message.author),
+                    self.list[key] = {'url': img['link'], 'count': '0', 'user': str(ctx.message.author).replace(" ", "_"),
                                       'date': str(datetime.datetime.utcnow()), 'deletehash': None}
                     self.write_list()
                     await self.bot.say('New smiley "' + key + '" added.')
@@ -179,15 +183,21 @@ class Image:
             else:
                 await self.bot.say('Not enough Imgur credits. Please reupload the image to imgur manually, or try again later.')
         else:
-            await self.bot.say('Possible error in image or url. Please check and retry.')
+            await self.bot.say('Imgur error: possible error in image or url. Please check and retry.')
 
     #remove a smiley
     @commands.command(pass_context=True, no_pm=True)
     async def remove(self, ctx, key: str=None):
+        if not key:
+            await self.bot.say('Syntax error, try !remove <name>')
+            return
+
         key = key.casefold()
-        if str(ctx.message.author) in adminlist or str(ctx.message.author) == self.list[key].get('user'):
-            if not key:
-                await self.bot.say('Syntax error, try !remove <name>')
+        #handle me_irl adds
+        if key == 'me_irl' or key == 'meirl':
+            key = str(ctx.message.author).casefold().replace(" ", "_")
+
+        if str(ctx.message.author).replace(" ", "_") in adminlist or str(ctx.message.author).replace(" ", "_") == self.list[key].get('user'):
             if not key in self.list:
                 await self.bot.say('Unable to find smiley in list. Please try again')
             else:
@@ -202,6 +212,22 @@ class Image:
                     await self.bot.say('Smiley "' + key +'" removed.')
         else:
             await self.bot.say('Insufficient privileges')
+
+    #search for a smiley
+    @commands.command(pass_context=True, no_pm=True)
+    async def search(self, ctx, searchstr: str=None):
+        message = ''
+        if not searchstr:
+            await self.bot.say('Syntax error, try !search <string>')
+            return
+        searchstr = searchstr.casefold()
+        for key in self.list:
+            if key.find(searchstr) >= 0:
+                message = message + ' `' + key + '`'
+        if message == '':
+            await self.bot.say('No match for "' + searchstr + '"')
+        else:
+             await self.bot.say(message)
 
     def imgur_verification(self, url):
         if not 'imgur.com' in urllib.parse.urlparse(url).netloc:
