@@ -13,10 +13,10 @@ import math
 
 from discord.ext import commands
 
-#imgur
+#imgur details go here
 client_id = ""
 client_secret = ""
-#discord
+#discord token
 DTOKEN = ""
 DISCORD_MAX_CHAR = 1850
 
@@ -39,6 +39,8 @@ Command Syntax:
 Code available on request.
 '''
 
+#table of admins by discord user name (not display name)
+#discord.py does not return a simple username for mods etc?
 adminlist = ()
 
 class Image:
@@ -122,8 +124,11 @@ class Image:
         #character limits means we gotta do a thing
         uplimit = math.ceil((len(message) + DISCORD_MAX_CHAR) / 2 / DISCORD_MAX_CHAR)
         await self.bot.say('List of all Smileys:')
-        for i in range(1,uplimit+1):
-            await self.bot.say ('`' + message[(i*DISCORD_MAX_CHAR-DISCORD_MAX_CHAR):(i*DISCORD_MAX_CHAR)] + '`')
+        if len(message) < DISCORD_MAX_CHAR:
+            await self.bot.say(message)
+        else:
+            for i in range(1,uplimit+1):
+                await self.bot.say ('`' + message[(i*DISCORD_MAX_CHAR-DISCORD_MAX_CHAR):(i*DISCORD_MAX_CHAR)] + '`')
 
     #lists top smileys
     @commands.command()
