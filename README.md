@@ -11,13 +11,12 @@ Code requires the following to be entered by host:
 - list of admin (or equivalent) user names to limit the use of the !remove command
 
 ##### Bot commands:
-- &<smiley> *calls link and displays image using native embed*
+- !call <smiley> *calls link and displays image using native embed*
 - !add <smiley> <url> *add a new image*
-- !search <string> *search for an image*
-- !info user <username> *displays info about images added by user*
-- !info image <smiley> *displays info about an image*
+- !info -u | --user <username> *displays info about images added by user*
+- !info -i | --image <smiley> *displays info about an image*
 - !listall *lists all available image*
 - !top *lists the top 10 images*
 - !random *displays a random image*
-- !me_irl *displays your personal smiley. create with !add me_irl <url>*
-- !remove <smiley> *deletes an image from the database*
+- !remove *deletes an image from the database*
+- !me_irl *displays your personal smiley. create with !add <your username> <url>*
