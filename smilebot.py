@@ -13,10 +13,10 @@ import math
 
 from discord.ext import commands
 
-#imgur details go here
+#imgur
 client_id = ""
 client_secret = ""
-#discord token
+#discord
 DTOKEN = ""
 DISCORD_MAX_CHAR = 1850
 
@@ -28,8 +28,8 @@ Command Syntax:
     &<smiley> --- calls the image
     !add <smiley> <url>
     !search <string> -- search through the database for similar / matching
-    !info user <username>
-    !info image <smiley>
+    !info -u | --user <username>
+    !info -i | --image <smiley>
     !listall --- lists all available smileys
     !top --- lists the top ten smileys
     !random -- displays a random smiley
@@ -39,8 +39,6 @@ Command Syntax:
 Code available on request.
 '''
 
-#table of admins by discord user name (not display name)
-#discord.py does not return a simple username for mods etc?
 adminlist = ()
 
 class Image:
@@ -81,21 +79,24 @@ class Image:
     #returns info on an image or user
     @commands.command(pass_context=True, no_pm=True)
     async def info(self, ctx, option: str=None, key: str=None):
-        if not option or not key:
+        if not option or not key or option not in ('--user', '-u', '--image', '-i'):
             await self.bot.say('''Syntax error, try:
-                !info user <user>
-                !info image <image>
+                !info -u | --user <user>
+                !info -i | --image <image>
                 ''')
             return
 
-        if option == 'user':
+        if option == '--user' or option == '-u':
             count = 0
             for image in self.list:
                 if self.list[image].get('user', None) == key:
                     count += 1
-            await self.bot.say('User ' + key + ' has added ' + str(count) + ' images.')
+            if count == 0:
+                await self.bot.say('User ' + key + ' has not added any images.')
+            else:
+                await self.bot.say('User ' + key + ' has added ' + str(count) + ' images.')
 
-        if option == 'image':
+        if option == '--image' or option == '-i':
             key = key.casefold()
             if key.startswith('"') or key.startswith('<'):
                 key = key[1:-1]
@@ -103,7 +104,7 @@ class Image:
                 await self.bot.say('No image named "' + key + '" exists.')
             else:
                 await self.bot.say('Info for smiley "' + key +
-                           '"\nImgur URL: ' + self.list[key].get('url', '') +
+                           '"\nImgur URL: <' + self.list[key].get('url', '') + '>'
                            '\nUsage count: ' + self.list[key]['count'] +
                            '\nAdded by: ' + self.list[key].get('user','') +
                            '\nTime added (UTC): ' + self.list[key].get('date',''))
