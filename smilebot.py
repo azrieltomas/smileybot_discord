@@ -1,7 +1,5 @@
 #SmileBot, originally for Euphoria, and created by SillyLyn.
 #Code forked and remade for Discord by crabmatic#2250
-#There's a few things in here that are throwbacks to the old system
-#I might fix them up but probably wont
 import discord
 import imgurpython
 import asyncio
@@ -52,13 +50,15 @@ class Image:
     async def on_message(self, message):
         if message.content.startswith('&'):
             key = str(message.content)[1:].casefold()
-            if key in self.list:
-                await bot.send_message(message.channel, self.list[key].get('url'))
-                self.record_data(key)
+            if not " " in key:
+            	if key in self.list:
+                	await bot.send_message(message.channel, self.list[key].get('url'))
+                	self.record_data(key)
+            	else:
+                	msg = 'No smiley called ' + key + ' exists.'
+                	await bot.send_message(message.channel, msg)
             else:
-                msg = 'No smiley called ' + key + ' exists.'
-                await bot.send_message(message.channel, msg)
-        #    await bot.process_commands(message)
+                return
 
     #returns bot info / help
     @commands.command()
@@ -87,6 +87,7 @@ class Image:
             return
 
         if option == '--user' or option == '-u':
+            key = key.casefold
             count = 0
             for image in self.list:
                 if self.list[image].get('user', None) == key:
@@ -235,6 +236,7 @@ class Image:
         else:
              await self.bot.say(message)
 
+    #imgur verifications
     def imgur_verification(self, url):
         if not 'imgur.com' in urllib.parse.urlparse(url).netloc:
             return False
